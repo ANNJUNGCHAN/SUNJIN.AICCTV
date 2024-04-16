@@ -2,20 +2,22 @@ version: "3"
 
 services:
 
-  CCTV_SERVICE: 
+  BUGUN_Dong_1_DEAD: 
 
+    # 첫번째 컨테이너에서만 이미지를 빌드한다
+    #############################
     build:
       context: ./YOLO
       dockerfile: Dockerfile
     image: "yolov8_engine:ver1.0"
-    
-    container_name: BUGUN_Dong_1_DEAD_Test
+    #############################
+    container_name: BUGUN_Dong_1_DEAD
     volumes:
       - /mnt:/Drive
       - ./AICCTV:/code
       - ./ultralytics:/usr/src/ultralytics/ultralytics
     restart: always
-    command: ["/opt/conda/bin/python", "/code/Counter.py"]
+    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_1_DEAD.py"]
     ipc: host  # IPC 모드를 호스트로 설정
     deploy:
       resources:
@@ -24,3 +26,129 @@ services:
             - driver: nvidia
               capabilities: [gpu]
               count: all  # 모든 GPU를 사용
+
+  BUGUN_Dong_1_OUT:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_1_OUT
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_1_OUT.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
+
+  BUGUN_Dong_2_DEAD:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_2_DEAD
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_2_DEAD.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
+
+  BUGUN_Dong_2_OUT:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_2_OUT
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_2_OUT.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
+
+  BUGUN_Dong_3_BACK:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_3_BACK
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_3_BACK.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
+
+  BUGUN_Dong_3_FRONT:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_3_FRONT
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_Dong_3_FRONT.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
+
+  BUGUN_Dong_4_DEAD:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_4_DEAD
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_4_DEAD.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
+
+  BUGUN_Dong_4_OUT:
+    image: "yolov8_engine:ver1.0"
+    container_name: BUGUN_Dong_1_OUT
+    volumes:
+      - /mnt:/Drive
+      - ./AICCTV:/code
+      - ./ultralytics:/usr/src/ultralytics/ultralytics
+    restart: always
+    command: ["/opt/conda/bin/python", "/code/Counter_Dong_4_OUT.py"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+              count: all
