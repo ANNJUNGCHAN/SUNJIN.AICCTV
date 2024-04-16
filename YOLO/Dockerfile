@@ -44,8 +44,12 @@ ENV OMP_NUM_THREADS=1
 # Avoid DDP error "MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library" https://github.com/pytorch/pytorch/issues/37377
 ENV MKL_THREADING_LAYER=GNU
 
-RUN rm -rf /usr/src/ultralytics
-RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+RUN rm -rf /usr/src/ultralytics/ultralytics
+RUN pip install --no-cache-dir \
+    torch==1.13.1+cu117 \
+    torchvision==0.14.1+cu117 \
+    torchaudio==0.13.1 \
+    --extra-index-url https://download.pytorch.org/whl/cu117
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
 
