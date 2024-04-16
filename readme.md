@@ -16,13 +16,11 @@ docker-compose -version # 설치 확인
 - 도커 컴포즈 설치 시, python request 에러
 
     . 설치 시, 아래 에러가 발생할 수 있습니다. <br>
-
+    . requests를 업그레이드 하여 에러를 방지합니다. <br>
+    
 ```
 ERROR: docker 7.0.0 has requirement requests>=2.26.0, but you'll have requests 2.22.0 which is incompatible.
 ```
-
-    
-    . 이 때, 아래와 같이 대응해주세요. <br>
 
 
 ```
