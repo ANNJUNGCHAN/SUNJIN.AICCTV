@@ -5,7 +5,6 @@ import time
 
 ## 객체 감지 필요
 import cv2
-#import matplotlib.pyplot as plt # 주피터 노트북 이미지 볼 때 사용
 from ultralytics import YOLO
 from ultralytics.solutions import object_counter
 
@@ -13,71 +12,46 @@ from ultralytics.solutions import object_counter
 import json
 import os
 import shutil
-#import inspect # 패키지가 어디서 왔는지 볼 때 사용
 import datetime
+import argparse
 
-# 환경 설정 변수
-MODEL_PATH = '/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt'
-SETTING_PATH = '/code/setting'
-FARM = 'BUGUN'
-HOUSE = 'Dong_1'
-COUNTER = 'DEAD'
-SAVE_VIDEO_PATH = '/Drive/DATACENTER_HDD/AICCTV_VIDEO'
-SAVE_TXT_PATH = '/Drive/DATACENTER_SSD/AICCTV_LOG'
+## 생성 패키지
+import utils
 
 def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     
     # 모델 불러오기
     model = YOLO(MODEL_PATH)
     
-    # JSON 불러오기
-    with open(os.path.join(SETTING_PATH, FARM + '.json'), 'r') as f :
-        json_data = json.load(f)
-        
-    # 필요한 것들 얻기
-
-    ## 카메라 번호 찾기
-    cam_name_dict = json_data['CAM_NAME']
-    reverse_cam_name_dict = {v:k for k,v in cam_name_dict.items()}
-    cam_no = reverse_cam_name_dict[HOUSE]
-
-    ## rtsp 찾기
-    rtsp_dict = json_data['RTSP_URL']
-    rtsp = rtsp_dict[cam_no]
-
-    ## 구역 찾기
-    rect = json_data['MULTI_CAM'][cam_no][COUNTER]
-    region_points = []
-    for sublist in rect:
-        region_points.append((int(sublist[0]), int(sublist[1])))
+    # 셋팅값 불러오기
+    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, FARM)
+    
+    ## 카운터 정의
+    counter = MakeCounter(model, region_points)
     
     while True :
     
         try :
-            ## rtsp 불러오기
-            cap = cv2.VideoCapture(rtsp, cv2.CAP_FFMPEG)
-            w, h, fps = (int(cap.get(x)) for x in (cv2.CAP_PROP_FRAME_WIDTH, cv2.CAP_PROP_FRAME_HEIGHT, cv2.CAP_PROP_FPS))
             
-            ## 카운터 정의
-            counter = object_counter.ObjectCounter()
-            counter.set_args(view_img=False,
-                            reg_pts=region_points,
-                            classes_names=model.names,
-                            draw_tracks=True,
-                            view_in_counts = True,
-                            view_out_counts = True)
+            ## rtsp 불러오기
+            #### 최대한 빠른 재접속을 위해, 모델과 카운터는 앞단에서 불러오고, cap은 뒷단에서 불러온다.
+            cap = cv2.VideoCapture(rtsp, cv2.CAP_FFMPEG)
             
             detect_time = None
             
             while cap.isOpened():
+                
                 success, im0 = cap.read()
                 
                 if not success:
                     print("Video frame is empty or video processing has been successfully completed.")
 
+                ## 트랙킹
                 tracks = model.track(im0, persist=True, show=False, verbose = True)
                 boxes, im0, in_count, out_count = counter.start_counting(im0, tracks)
+                im0 = InsertNowTime(im0)
                 
+                ## 트랙킹까지 완료한 시점
                 current_time = datetime.datetime.now()
                 
                 # 객체가 감지되면 현재 시간을 업데이트하고 데이터를 큐에 넣습니다.
@@ -92,32 +66,38 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
         except Exception as e :
             print(e)
         
-def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_TXT_PATH, FARM, HOUSE, COUNTER):
+def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTER):
 
     while True:
+        
         try:
+            
             start_time = None
             end_time = None
             frame_count = 0
             
-            # 텍스트 파일 초기화
-            text_filename = FARM + "_" + HOUSE + "_" + COUNTER +  "_" + "record_temp.txt"
-            text_save_path = os.path.join(SAVE_TXT_PATH, text_filename)
-            text_file = open(text_save_path, "w")  # 텍스트 파일 열기
+            # 텍스트 파일 설정
+            counter_txt_name = FARM + "_" + HOUSE + "_" + COUNTER +  "_" + "record_temp.txt"
+            counter_save_full_path = os.path.join(SAVE_COUNTER_TXT_PATH, counter_txt_name)
+            text_file = open(counter_save_full_path, "w")  # 텍스트 파일 열기
 
-            # 파일 이름 설정
-            filename =  FARM + "_" + HOUSE + "_" + COUNTER + "_" + "record_temp.avi"
-            save_path = os.path.join(SAVE_VIDEO_PATH, filename)
+            # 비디오 파일 설정
+            video_path =  FARM + "_" + HOUSE + "_" + COUNTER + "_" + "record_temp.avi"
+            video_save_full_path = os.path.join(SAVE_VIDEO_PATH, video_path)
 
             # 비디오 라이터 초기화
-            video_writer = cv2.VideoWriter(save_path,
+            video_writer = cv2.VideoWriter(video_save_full_path,
                                            cv2.VideoWriter_fourcc(*'mp4v'),
                                            15,
                                            (640, 480))
 
             while True:
+                
                 try:
+                    
+                    ## Queue 받기
                     data = q.get(timeout=60)  # 1분 동안 대기
+                    
                     if start_time is None:
                         start_time = datetime.datetime.now()  # 첫 데이터 수신 시간 기록
 
@@ -131,6 +111,7 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_TXT_PATH, FARM, HOUSE, COUNTER):
                     text_file.write(f"Frame {frame_count}: In {in_count}, Out {out_count}\n")
 
                 except queue.Empty:
+                    
                     end_time = datetime.datetime.now()
                     video_writer.release()
                     text_file.close()  # 텍스트 파일 닫기
@@ -139,29 +120,59 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_TXT_PATH, FARM, HOUSE, COUNTER):
                         os.remove(save_path)
                         os.remove(text_save_path)  # 비디오 파일이 없으면 텍스트 파일도 삭제
                         print("No DATA")
+                        
                     else:
-                        final_filename = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.avi"
-                        final_text_filename = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
-                        final_save_path = os.path.join(SAVE_VIDEO_PATH, final_filename)
-                        final_text_save_path = os.path.join(SAVE_TXT_PATH, final_text_filename)
+                        
+                        ## 비디오 파일 저장
+                        final_video_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.avi"
+                        final_save_path = os.path.join(SAVE_VIDEO_PATH, final_video_name)
                         os.rename(save_path, final_save_path)
-                        os.rename(text_save_path, final_text_save_path)  # 최종 텍스트 파일 이름 변경
                         print(f"Video saved: {final_save_path}")
-                        print(f"Counts saved: {final_text_save_path}")
+                        
+                        ## 텍스트 파일 저장
+                        final_counter_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
+                        final_counter_txt_save_path = os.path.join(SAVE_COUNTER_TXT_PATH, final_counter_txt_name)
+                        os.rename(text_save_path, final_counter_txt_save_path)
+                        print(f"Counts saved: {final_counter_txt_save_path}")
                         
                     break
 
         except Exception as e:
             print(e)
             pass
-        
-        
-# 큐 객체 생성
-q = queue.Queue()
+      
+if __name__ == '__main__':
+    
+    parser = argparse.ArgumentParser()
+    
+    ### 해당 2개 값은 설정하는 것이 아닌, 기본값이 파싱되도록 한다.
+    ### 만약에 모델에 변경이 생기면, 해당 부분의 경로만 수정해서 전체 적용 되도록 한다.
+    parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt', help='insert yolov8 detection model')
+    parser.add_argument('--setting', type=str, default='/code/setting', help='insert setting json path')
+    ################################################################################
+    
+    parser.add_argument('--farm', type=str, default='', help='insert farm name')
+    parser.add_argument('--house', type=str, default='', help='insert house name')
+    parser.add_argument('--counter', type=str, default='', help='insert count type (upper letter, DEAD/OUT)')
+    parser.add_argument('--video_path', type=str, default='', help='insert where you save video')
+    parser.add_argument('--counter_txt_path', type=str, default='', help='insert where you save counter txt path')
+    args = parser.parse_args()
+    
+    # 환경 설정 변수
+    MODEL_PATH = args.model
+    SETTING_PATH = args.setting
+    FARM = args.farm
+    HOUSE = args.house
+    COUNTER = args.counter
+    SAVE_VIDEO_PATH = args.video_path
+    SAVE_COUNTER_TXT_PATH = args.counter_txt_path
+    
+    # 큐 객체 생성
+    q = queue.Queue()
 
-# 스레드 생성 및 실행
-t1 = threading.Thread(target=Detect, args=(q,))
-t2 = threading.Thread(target=VideoRecorder, args=(q,))
+    # 스레드 생성 및 실행
+    t1 = threading.Thread(target=Detect, args=(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER))
+    t2 = threading.Thread(target=VideoRecorder, args=(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTER))
 
-t1.start()
-t2.start()
+    t1.start()
+    t2.start()
