@@ -5,7 +5,6 @@
 # Start FROM PyTorch image https://hub.docker.com/r/pytorch/pytorch or nvcr.io/nvidia/pytorch:23.03-py3
 FROM pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime
 RUN pip install --no-cache nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
-RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 
 # Downloads to user config dir
 ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
@@ -23,6 +22,7 @@ RUN apt upgrade --no-install-recommends -y openssl tar
 
 # Create working directory
 WORKDIR /usr/src/ultralytics
+RUN git clone https://github.com/ultralytics/ultralytics -b main /usr/src/ultralytics
 
 # Install pip packages
 RUN python3 -m pip install --upgrade pip wheel
@@ -43,6 +43,9 @@ RUN rm -rf tmp
 ENV OMP_NUM_THREADS=1
 # Avoid DDP error "MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library" https://github.com/pytorch/pytorch/issues/37377
 ENV MKL_THREADING_LAYER=GNU
+
+RUN rm -rf /usr/src/ultralytics
+RUN pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
 

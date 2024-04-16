@@ -22,7 +22,7 @@ def Detect(q) :
     MODEL_PATH = '/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt'
     SETTING_PATH = '/Drive/DATACENTER_SSD/AICCTV_ASSET/setting'
     FARM = 'BUGUN'
-    HOUSE = 'Dong_1'
+    HOUSE = 'Dong_2'
     COUNTER = 'DEAD'
     
     # 모델 불러오기
@@ -43,7 +43,7 @@ def Detect(q) :
     rtsp_dict = json_data['RTSP_URL']
     rtsp = rtsp_dict[cam_no]
     # rtsp 백업용
-    #rtsp = '/Drive/DATACENTER_HDD/AICCTV_OLD_VIDEO/Dong_1_2024-02-22_09-40-30_09-42-13.avi'
+    #rtsp = '/Drive/DATACENTER_HDD/AICCTV_OLD_VIDEO/Dong_2_2024-02-22_09-40-30_09-42-13.avi'
 
     ## 구역 찾기
     rect = json_data['MULTI_CAM'][cam_no][COUNTER]
@@ -101,7 +101,7 @@ def VideoRecorder(q):
     SAVE_VIDEO_PATH = '/Drive/DATACENTER_HDD/AICCTV_VIDEO'
     SAVE_TXT_PATH = '/Drive/DATACENTER_SSD/AICCTV_LOG'
     FARM = 'BUGUN'
-    HOUSE = 'Dong_1'
+    HOUSE = 'Dong_2'
     COUNTER = 'DEAD'
 
     while True:

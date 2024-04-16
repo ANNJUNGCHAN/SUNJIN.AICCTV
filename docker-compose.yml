@@ -1,12 +1,18 @@
 version: "3"
+
 services:
+
+  CCTV_SERVICE: 
+
     build:
       context: ./YOLO
       dockerfile: Dockerfile
-    image: YOLOv8:ver1.0
-    container_name: BUGUN_Dong_1_DEAD
+    image: "yolov8:ver1.0"
+    
+    container_name: BUGUN_Dong_1_DEAD_Test
     volumes:
       - /mnt:/Drive
       - ./AICCTV:/code
       - ./ultralytics:/usr/src/ultralytics
+    restart: always
     command: ["/opt/conda/bin/python", "/code/Counter.py"]
