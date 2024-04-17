@@ -48,4 +48,5 @@ docker-compose -f /home/sunjin/AICCTV/docker-compose.yml down --rmi all --volume
 
 ```
 docker system prune -a --volumes
+docker volume prune
 ```

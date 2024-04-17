@@ -47,7 +47,7 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
 
                 ## 트랙킹
                 tracks = model.track(im0, persist=True, show=False, verbose = True)
-                boxes, im0, in_count, out_count = counter.start_counting(im0, tracks)
+                boxes, track_ids, im0, in_count, out_count = counter.start_counting(im0, tracks)
                 im0 = InsertNowTime(im0)
                 
                 ## 트랙킹까지 완료한 시점
@@ -56,16 +56,16 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
                 # 객체가 감지되면 현재 시간을 업데이트하고 데이터를 큐에 넣습니다.
                 if len(boxes) != 0:
                     detect_time = current_time  # 마지막 감지 시간을 현재 시간으로 설정
-                    q.put([boxes, im0, in_count, out_count])
+                    q.put([boxes, track_ids, im0, in_count, out_count])
                     
                 # 객체가 감지되지 않았지만 마지막 감지 시간으로부터 5분 이내인 경우에도 데이터를 큐에 넣습니다.
                 elif detect_time and (current_time - detect_time <= datetime.timedelta(minutes=5)):
-                    q.put([boxes, im0, in_count, out_count])
+                    q.put([boxes, track_ids, im0, in_count, out_count])
                     
         except Exception as e :
             print(e)
         
-def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTER):
+def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FARM, HOUSE, COUNTER):
 
     while True:
         
@@ -79,6 +79,11 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTE
             counter_txt_name = FARM + "_" + HOUSE + "_" + COUNTER +  "_" + "record_temp.txt"
             counter_save_full_path = os.path.join(SAVE_COUNTER_TXT_PATH, counter_txt_name)
             text_file = open(counter_save_full_path, "w")  # 텍스트 파일 열기
+            
+            # 디텍팅 파일 설정
+            detect_txt_name = FARM + "_" + HOUSE + "_" + COUNTER +  "_" + "record_temp.txt"
+            detect_save_full_path = os.path.join(SAVE_DETECT_TXT_PATH, detect_txt_name)
+            detect_text_file = open(detect_save_full_path, "w")  # 디텍팅 파일 열기
 
             # 비디오 파일 설정
             video_path =  FARM + "_" + HOUSE + "_" + COUNTER + "_" + "record_temp.avi"
@@ -100,14 +105,16 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTE
                     if start_time is None:
                         start_time = datetime.datetime.now()  # 첫 데이터 수신 시간 기록
 
-                    boxes, im0, in_count, out_count = data
+                    boxes, track_ids, im0, in_count, out_count = data
                     print(in_count, out_count)
+                    print(boxes, track_ids)
 
                     video_writer.write(im0)
                     frame_count += 1
 
                     # in_count와 out_count를 텍스트 파일에 기록
                     text_file.write(f"Frame {frame_count}: In {in_count}, Out {out_count}\n")
+                    detect_text_file.write(f"Frame {frame_count}: BBOX : {boxes} , TRACK : {track_ids}\n")
 
                 except queue.Empty:
                     
@@ -134,6 +141,12 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTE
                         os.rename(text_save_path, final_counter_txt_save_path)
                         print(f"Counts saved: {final_counter_txt_save_path}")
                         
+                        ## 디텍팅 파일 저장
+                        final_detect_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
+                        final_detect_txt_save_path = os.path.join(SAVE_DETECT_TXT_PATH, final_detect_txt_name)
+                        os.rename(detect_save_full_path, final_detect_txt_save_path)
+                        print(f"Counts saved: {final_detect_txt_save_path}")
+                        
                     break
 
         except Exception as e:
@@ -155,6 +168,8 @@ if __name__ == '__main__':
     parser.add_argument('--counter', type=str, default='', help='insert count type (upper letter, DEAD/OUT)')
     parser.add_argument('--video_path', type=str, default='', help='insert where you save video')
     parser.add_argument('--counter_txt_path', type=str, default='', help='insert where you save counter txt path')
+    parser.add_argument('--detect_txt_path', type=str, default='', help='insert where you save counter txt path')
+    
     args = parser.parse_args()
     
     # 환경 설정 변수
@@ -165,13 +180,14 @@ if __name__ == '__main__':
     COUNTER = args.counter
     SAVE_VIDEO_PATH = args.video_path
     SAVE_COUNTER_TXT_PATH = args.counter_txt_path
+    SAVE_DETECT_TXT_PATH = args.detect_txt_path
     
     # 큐 객체 생성
     q = queue.Queue()
 
     # 스레드 생성 및 실행
     t1 = threading.Thread(target=Detect, args=(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER))
-    t2 = threading.Thread(target=VideoRecorder, args=(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTER))
+    t2 = threading.Thread(target=VideoRecorder, args=(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FARM, HOUSE, COUNTER))
 
     t1.start()
     t2.start()

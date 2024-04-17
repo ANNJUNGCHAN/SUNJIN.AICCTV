@@ -4,6 +4,7 @@
 
 # Start FROM PyTorch image https://hub.docker.com/r/pytorch/pytorch or nvcr.io/nvidia/pytorch:23.03-py3
 FROM pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime
+
 RUN pip install --no-cache nvidia-tensorrt --index-url https://pypi.ngc.nvidia.com
 
 # Downloads to user config dir
@@ -50,6 +51,10 @@ RUN pip install --no-cache-dir \
     torchvision==0.14.1+cu117 \
     torchaudio==0.13.1 \
     --extra-index-url https://download.pytorch.org/whl/cu117
+
+# NTP 설치 및 설정
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y ntp \
+    && echo 'y\n6\n69' | tzconfig
 
 # Usage Examples -------------------------------------------------------------------------------------------------------
 

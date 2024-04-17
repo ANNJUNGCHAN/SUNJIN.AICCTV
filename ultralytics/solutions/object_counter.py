@@ -171,6 +171,7 @@ class ObjectCounter:
         """Extracts and processes tracks for object counting in a video stream."""
 
         boxes = []
+        track_ids = []
         # Annotator Init and region drawing
         self.annotator = Annotator(self.im0, self.tf, self.names)
 
@@ -182,7 +183,8 @@ class ObjectCounter:
             # Extract tracks
             for box, track_id, cls in zip(boxes, track_ids, clss):
                 # Draw bounding box
-                self.annotator.box_label(box, label=f"{self.names[cls]}#{track_id}", color=colors(int(track_id), True))
+                # 박스는 그리지 않기 때문에, 주석처리 했음
+                # self.annotator.box_label(box, label=f"{self.names[cls]}#{track_id}", color=colors(int(track_id), True))
 
                 # Store class info
                 if self.names[cls] not in self.class_wise_count:
@@ -270,7 +272,8 @@ class ObjectCounter:
                 classwise_txtgap=self.cls_txtdisplay_gap,
             )
             
-        return boxes
+        return boxes, track_ids
+    
     def display_frames(self):
         """Display frame."""
         if self.env_check:
@@ -293,13 +296,14 @@ class ObjectCounter:
         """
         self.im0 = im0  # store image
         ## 수정
-        boxes = self.extract_and_process_tracks(tracks)  # draw region even if no objects
+        boxes, track_ids = self.extract_and_process_tracks(tracks)  # draw region even if no objects
 
         #if self.view_img:
             #self.display_frames()
         self.display_frames()
         ## 수정
-        return boxes, self.im0, self.in_counts, self.out_counts
+        
+        return boxes, track_ids, self.im0, self.in_counts, self.out_counts
 
 
 if __name__ == "__main__":
