@@ -38,6 +38,8 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
             
             detect_time = None
             
+            frame_count = 0
+            
             while cap.isOpened():
                 
                 success, im0 = cap.read()
@@ -49,6 +51,7 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
                 tracks = model.track(im0, persist=True, show=False, verbose = True)
                 boxes, track_ids, im0, in_count, out_count = counter.start_counting(im0, tracks)
                 im0 = InsertNowTime(im0)
+                frame_count += 1
                 
                 ## 트랙킹까지 완료한 시점
                 current_time = datetime.datetime.now()
@@ -92,7 +95,7 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
             # 비디오 라이터 초기화
             video_writer = cv2.VideoWriter(video_save_full_path,
                                            cv2.VideoWriter_fourcc(*'mp4v'),
-                                           15,
+                                           10,
                                            (640, 480))
 
             while True:
