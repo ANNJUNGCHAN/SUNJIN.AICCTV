@@ -6,17 +6,15 @@ import time
 ## 객체 감지 필요
 import cv2
 from ultralytics import YOLO
-from ultralytics.solutions import object_counter
 
 ## 기본 패키지
-import json
 import os
 import shutil
 import datetime
 import argparse
 
 ## 생성 패키지
-import utils
+from utils import *
 
 def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     
@@ -24,7 +22,7 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     model = YOLO(MODEL_PATH)
     
     # 셋팅값 불러오기
-    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, FARM)
+    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER)
     
     ## 카운터 정의
     counter = MakeCounter(model, region_points)
@@ -35,6 +33,7 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
             
             ## rtsp 불러오기
             #### 최대한 빠른 재접속을 위해, 모델과 카운터는 앞단에서 불러오고, cap은 뒷단에서 불러온다.
+            print(rtsp)
             cap = cv2.VideoCapture(rtsp, cv2.CAP_FFMPEG)
             
             detect_time = None
@@ -117,8 +116,8 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, FARM, HOUSE, COUNTE
                     text_file.close()  # 텍스트 파일 닫기
                     
                     if frame_count == 0:
-                        os.remove(save_path)
-                        os.remove(text_save_path)  # 비디오 파일이 없으면 텍스트 파일도 삭제
+                        os.remove(video_save_full_path)
+                        os.remove(counter_save_full_path)  # 비디오 파일이 없으면 텍스트 파일도 삭제
                         print("No DATA")
                         
                     else:

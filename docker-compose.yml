@@ -17,7 +17,7 @@ services:
       - ./AICCTV:/code
       - ./ultralytics:/usr/src/ultralytics/ultralytics
     restart: always
-    command: ["/opt/conda/bin/python", "/code/Counter_BUGUN_Dong_1_DEAD.py"]
+    command: ["/opt/conda/bin/python", "/code/Counter.py","--farm=BUGUN", "--house=Dong_1" ,"--counter=DEAD", "--video_path=/Drive/DATACENTER_HDD/AICCTV_BACKUP_VIDEO" ,"--counter_txt_path=/Drive/DATACENTER_SSD/AICCTV_BACKUP_LOG"]
     ipc: host  # IPC 모드를 호스트로 설정
     deploy:
       resources:
@@ -26,3 +26,8 @@ services:
             - driver: nvidia
               capabilities: [gpu]
               count: all  # 모든 GPU를 사용
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"

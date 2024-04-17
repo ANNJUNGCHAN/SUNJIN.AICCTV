@@ -1,5 +1,8 @@
 import cv2
 import datetime
+import os
+import json
+from ultralytics.solutions import object_counter
 
 def InsertNowTime(frame) :
     time_stamp = datetime.datetime.now()
@@ -7,7 +10,7 @@ def InsertNowTime(frame) :
     cv2.putText(frame, time_stamp, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
     return frame
 
-def SearchParam(SETTING_PATH, FARM, HOUSE, FARM) :
+def SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) :
     
     # JSON 불러오기
     with open(os.path.join(SETTING_PATH, FARM + '.json'), 'r') as f :
