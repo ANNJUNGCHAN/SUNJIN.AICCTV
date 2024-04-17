@@ -2,7 +2,7 @@ version: "3"
 
 services:
 
-  BUGUN_Dong_1_DEAD: 
+  TEST: 
 
     # 첫번째 컨테이너에서만 이미지를 빌드한다
     #############################
@@ -11,13 +11,13 @@ services:
       dockerfile: Dockerfile
     image: "yolov8_engine:ver1.0"
     #############################
-    container_name: BUGUN_Dong_1_DEAD
+    container_name: TEST
     volumes:
       - /mnt:/Drive
       - ./AICCTV:/code
       - ./ultralytics:/usr/src/ultralytics/ultralytics
     restart: always
-    command: ["/opt/conda/bin/python", "/code/Counter.py","--farm=BUGUN", "--house=Dong_1" ,"--counter=DEAD", "--video_path=/Drive/DATACENTER_HDD/AICCTV_BACKUP_VIDEO" ,"--counter_txt_path=/Drive/DATACENTER_SSD/AICCTV_BACKUP_LOG"]
+    #command: ["/opt/conda/bin/python", "/code/Counter.py","--farm=BUGUN", "--house=Dong_1" ,"--counter=DEAD", "--video_path=/Drive/DATACENTER_HDD/AICCTV_BACKUP_VIDEO" ,"--counter_txt_path=/Drive/DATACENTER_SSD/AICCTV_BACKUP_LOG"]
     ipc: host  # IPC 모드를 호스트로 설정
     deploy:
       resources:
@@ -31,3 +31,33 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
+  #BUGUN_Dong_1_DEAD: 
+
+    # 첫번째 컨테이너에서만 이미지를 빌드한다
+    #############################
+    #build:
+    #  context: ./YOLO
+    #  dockerfile: Dockerfile
+    #image: "yolov8_engine:ver1.0"
+    #############################
+    #container_name: BUGUN_Dong_1_DEAD
+    #volumes:
+    #  - /mnt:/Drive
+    #  - ./AICCTV:/code
+    #  - ./ultralytics:/usr/src/ultralytics/ultralytics
+    #restart: always
+    #command: ["/opt/conda/bin/python", "/code/Counter.py","--farm=BUGUN", "--house=Dong_1" ,"--counter=DEAD", "--video_path=/Drive/DATACENTER_HDD/AICCTV_BACKUP_VIDEO" ,"--counter_txt_path=/Drive/DATACENTER_SSD/AICCTV_BACKUP_LOG"]
+    #ipc: host  # IPC 모드를 호스트로 설정
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          capabilities: [gpu]
+    #          count: all  # 모든 GPU를 사용
+    #logging:
+    #  driver: "json-file"
+    #  options:
+    #    max-size: "1m"
+    #    max-file: "3"
