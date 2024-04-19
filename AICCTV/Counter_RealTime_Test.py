@@ -22,7 +22,12 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     model = YOLO(MODEL_PATH)
     
     # 셋팅값 불러오기
-    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER)
+    _, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER)
+    
+    ##################################################
+    # 실험 동영상 경로 넣기
+    rtsp = '/Drive/DATACENTER_HDD/AICCTV_BACKUP_PRE/BUGUN_Dong_3_BACK_DEAD_20240223_999999_20240223_062113.mp4'
+    ##################################################
     
     ## 카운터 정의
     counter = MakeCounter(model, region_points)
@@ -105,11 +110,14 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
                     ## Queue 받기
                     data = q.get(timeout=60)  # 1분 동안 대기
                     
+                    
                     if start_time is None:
                         start_time = datetime.datetime.now()  # 첫 데이터 수신 시간 기록
 
                     boxes, track_ids, im0, in_count, out_count = data
                     print(boxes, track_ids, in_count, out_count)
+                    #print(in_count, out_count)
+                    #print(boxes, track_ids)
 
                     video_writer.write(im0)
                     frame_count += 1
@@ -157,32 +165,34 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
       
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser()
+    #parser = argparse.ArgumentParser()
     
     ### 해당 2개 값은 설정하는 것이 아닌, 기본값이 파싱되도록 한다.
     ### 만약에 모델에 변경이 생기면, 해당 부분의 경로만 수정해서 전체 적용 되도록 한다.
-    parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt', help='insert yolov8 detection model')
-    parser.add_argument('--setting', type=str, default='/code/setting', help='insert setting json path')
+    #parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt', help='insert yolov8 detection model')
+    #parser.add_argument('--setting', type=str, default='/code/setting', help='insert setting json path')
     ################################################################################
     
-    parser.add_argument('--farm', type=str, default='', help='insert farm name')
-    parser.add_argument('--house', type=str, default='', help='insert house name')
-    parser.add_argument('--counter', type=str, default='', help='insert count type (upper letter, DEAD/OUT)')
-    parser.add_argument('--video_path', type=str, default='', help='insert where you save video')
-    parser.add_argument('--counter_txt_path', type=str, default='', help='insert where you save counter txt path')
-    parser.add_argument('--detect_txt_path', type=str, default='', help='insert where you save counter txt path')
+    #parser.add_argument('--farm', type=str, default='', help='insert farm name')
+    #parser.add_argument('--house', type=str, default='', help='insert house name')
+    #parser.add_argument('--counter', type=str, default='', help='insert count type (upper letter, DEAD/OUT)')
+    #parser.add_argument('--video_path', type=str, default='', help='insert where you save video')
+    #parser.add_argument('--counter_txt_path', type=str, default='', help='insert where you save counter txt path')
+    #parser.add_argument('--detect_txt_path', type=str, default='', help='insert where you save counter txt path')
     
-    args = parser.parse_args()
+    #args = parser.parse_args()
     
+    #################################
     # 환경 설정 변수
-    MODEL_PATH = args.model
-    SETTING_PATH = args.setting
-    FARM = args.farm
-    HOUSE = args.house
-    COUNTER = args.counter
-    SAVE_VIDEO_PATH = args.video_path
-    SAVE_COUNTER_TXT_PATH = args.counter_txt_path
-    SAVE_DETECT_TXT_PATH = args.detect_txt_path
+    MODEL_PATH = '/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt'
+    SETTING_PATH = '/code/setting'
+    FARM = 'BUGUN'
+    HOUSE = 'Dong_3_BACK'
+    COUNTER = 'DEAD'
+    SAVE_VIDEO_PATH = '/Drive/DATACENTER_HDD/AICCTV_BACKUP_VIDEO'
+    SAVE_COUNTER_TXT_PATH = '/Drive/DATACENTER_SSD/AICCTV_BACKUP_LOG'
+    SAVE_DETECT_TXT_PATH = '/Drive/DATACENTER_SSD/AICCTV_BACKUP_Detect_Log'
+    #################################
     
     # 큐 객체 생성
     q = queue.Queue()
