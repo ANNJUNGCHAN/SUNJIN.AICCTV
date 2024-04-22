@@ -135,18 +135,21 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
                         final_video_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.avi"
                         final_save_path = os.path.join(SAVE_VIDEO_PATH, final_video_name)
                         os.rename(video_save_full_path, final_save_path)
+                        os.remove(video_save_full_path) ## 저장 했으면, 완전 삭제
                         print(f"Video saved: {final_save_path}")
                         
                         ## 텍스트 파일 저장
                         final_counter_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
                         final_counter_txt_save_path = os.path.join(SAVE_COUNTER_TXT_PATH, final_counter_txt_name)
                         os.rename(counter_save_full_path, final_counter_txt_save_path)
+                        os.remove(counter_save_full_path) ## 저장 했으면, 완전 삭제
                         print(f"Counts saved: {final_counter_txt_save_path}")
                         
                         ## 디텍팅 파일 저장
                         final_detect_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
                         final_detect_txt_save_path = os.path.join(SAVE_DETECT_TXT_PATH, final_detect_txt_name)
                         os.rename(detect_save_full_path, final_detect_txt_save_path)
+                        os.remove(detect_save_full_path) ## 저장 했으면, 완전 삭제
                         print(f"Counts saved: {final_detect_txt_save_path}")
                         
                     break
