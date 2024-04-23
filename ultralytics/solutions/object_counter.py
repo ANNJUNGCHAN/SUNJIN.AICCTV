@@ -304,6 +304,14 @@ class ObjectCounter:
         ## 수정
         
         return boxes, track_ids, self.im0, self.in_counts, self.out_counts
+    
+    def reset_counts(self):
+        """Resets the in and out counts to zero."""
+        self.in_counts = 0
+        self.out_counts = 0
+        self.count_ids = []  # Clear tracked IDs to prevent counting errors on reset
+        self.class_wise_count = {} # class_wise_count까지 메모리를 지워줘야 이미지에 표시가 안된다.
+        print("Counters have been reset.")
 
 
 if __name__ == "__main__":

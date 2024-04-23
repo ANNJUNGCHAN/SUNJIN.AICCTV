@@ -21,10 +21,13 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     # 모델 불러오기
     model = YOLO(MODEL_PATH)
     
-    # 셋팅값 불러오기
-    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER)
+    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) 
     
-    ## 카운터 정의
+    # 셋팅값 불러오기
+    #_, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) # 테스트 시 적용
+    
+    #rtsp = "/Drive/DATACENTER_HDD/AICCTV_BACKUP_PRE/BUGUN_Dong_1_DEAD_5min.mp4" # 테스트 데이터 넣기
+    
     counter = MakeCounter(model, region_points)
     
     while True :
@@ -43,6 +46,7 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
             while cap.isOpened():
                 
                 success, im0 = cap.read()
+                #time.sleep(1/30) # 테스트 시만 적용
                 
                 if not success:
                     print("Video frame is empty or video processing has been successfully completed.")
@@ -65,113 +69,110 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
                 elif detect_time and (current_time - detect_time <= datetime.timedelta(minutes=5)):
                     q.put([boxes, track_ids, im0, in_count, out_count])
                     
+                # 5분 이상 감지가 없으면 while 루프를 다시 시작합니다.
+                if detect_time and (current_time - detect_time > datetime.timedelta(minutes=5)):
+                    # 둘다 영일경우
+                    if (in_count == 0) and (out_count == 0):
+                        pass
+                    
+                    # 만약 5분이상 되었는데 in_counts와 out_counts가 각각 0이 아닐경우
+                    else :
+                        print('5분이상이 되어, 카운터를 초기화합니다.')
+                        # 카운터 초기화
+                        counter.reset_counts()
+                    
+                    
         except Exception as e :
             print(e)
         
 def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FARM, HOUSE, COUNTER):
+    
+    print(FARM, HOUSE, COUNTER)
+    
+    ##################### 초기화
+    
+    start_time, end_time, frame_count, text_file, detect_text_file, video_writer, counter_save_full_path, detect_save_full_path, video_save_full_path = init_saver(SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FARM, HOUSE, COUNTER)
 
+    ##################### 큐를 받아서 처리하는 구간
     while True:
         
         try:
             
-            start_time = None
-            end_time = None
-            frame_count = 0
+            # 큐를 받아오면, video wirter나 counter, detector에 정보를 넣어줌
+            ##############################################################################################
+            ## Queue 받기
+            data = q.get(timeout=60)  # 1분 동안 대기
             
-            # 텍스트 파일 설정
-            counter_txt_name = FARM + "_" + HOUSE + "_" + COUNTER +  "_" + "record_temp.txt"
-            counter_save_full_path = os.path.join(SAVE_COUNTER_TXT_PATH, counter_txt_name)
-            text_file = open(counter_save_full_path, "w")  # 텍스트 파일 열기
+            if start_time is None:
+                start_time = datetime.datetime.now()  # 첫 데이터 수신 시간 기록
+
+            boxes, track_ids, im0, in_count, out_count = data
+            print(boxes, track_ids, in_count, out_count)
+
+            #print('기록시작')
+            #print(video_writer.isOpened())
+            video_writer.write(im0)
+            #cv2.imwrite(os.path.join('/Drive/DATACENTER_HDD/AICCTV_BACKUP_DONE', f'frame_{frame_count}.jpg'), im0)
+
+            print(os.path.getsize(video_save_full_path))
+            #print('기록종료')
             
-            # 디텍팅 파일 설정
-            detect_txt_name = FARM + "_" + HOUSE + "_" + COUNTER +  "_" + "record_temp.txt"
-            detect_save_full_path = os.path.join(SAVE_DETECT_TXT_PATH, detect_txt_name)
-            detect_text_file = open(detect_save_full_path, "w")  # 디텍팅 파일 열기
+            # 카운팅이 1올라감. 해당 지표는 데이터가 들어왔는지 안들어왔는지 판단하기 위함임
+            frame_count += 1
 
-            # 비디오 파일 설정
-            video_path =  FARM + "_" + HOUSE + "_" + COUNTER + "_" + "record_temp.avi"
-            video_save_full_path = os.path.join(SAVE_VIDEO_PATH, video_path)
+            # in_count와 out_count를 텍스트 파일에 기록
+            text_file.write(f"Frame {frame_count}: In {in_count}, Out {out_count}\n")
+            detect_text_file.write(f"Frame {frame_count}: BBOX : {boxes} , TRACK : {track_ids}\n")
 
-            # 비디오 라이터 초기화
-            video_writer = cv2.VideoWriter(video_save_full_path,
-                                           cv2.VideoWriter_fourcc(*'mp4v'),
-                                           10,
-                                           (640, 480))
-
-            while True:
+        except queue.Empty:
+            
+            if frame_count > 0 :
                 
-                try:
-                    
-                    ## Queue 받기
-                    data = q.get(timeout=60)  # 1분 동안 대기
-                    
-                    if start_time is None:
-                        start_time = datetime.datetime.now()  # 첫 데이터 수신 시간 기록
+                # 다 닫기
+                video_writer.release()
+                text_file.close()
+                detect_text_file.close()
+                
+                # 큐가 비어있다면, 마지막 시간을 찾아내고, 파일을 저장한 후, 초기화를 시킴
+                
+                end_time = datetime.datetime.now()
+                
+                ## 비디오 파일 저장
+                final_video_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.avi"
+                final_save_path = os.path.join(SAVE_VIDEO_PATH, final_video_name)
+                os.rename(video_save_full_path, final_save_path)
+                print(f"Video saved: {final_save_path}")
+                
+                ## 텍스트 파일 저장
+                final_counter_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
+                final_counter_txt_save_path = os.path.join(SAVE_COUNTER_TXT_PATH, final_counter_txt_name)
+                os.rename(counter_save_full_path, final_counter_txt_save_path)
+                print(f"Counts saved: {final_counter_txt_save_path}")
+                
+                ## 디텍팅 파일 저장
+                final_detect_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
+                final_detect_txt_save_path = os.path.join(SAVE_DETECT_TXT_PATH, final_detect_txt_name)
+                os.rename(detect_save_full_path, final_detect_txt_save_path)
+                print(f"Counts saved: {final_detect_txt_save_path}")
+                
+                ## 잠시 쉬기
+                time.sleep(10)
+                
+                # 초기화
+                start_time, end_time, frame_count, text_file, detect_text_file, video_writer, counter_save_full_path, detect_save_full_path, video_save_full_path = init_saver(SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FARM, HOUSE, COUNTER)
+        
+            else :
+                
+                # 다 닫기
+                video_writer.release()
+                text_file.close()
+                detect_text_file.close()
+                
+                # 1분마다 찍힐거임 (QUEUE에서 1분 기다리니까!)
+                print("들어온 데이터 없음")
+                # 초기화
+                start_time, end_time, frame_count, text_file, detect_text_file, video_writer, counter_save_full_path, detect_save_full_path, video_save_full_path = init_saver(SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FARM, HOUSE, COUNTER)
 
-                    boxes, track_ids, im0, in_count, out_count = data
-                    print(boxes, track_ids, in_count, out_count)
-
-                    video_writer.write(im0)
-                    frame_count += 1
-
-                    # in_count와 out_count를 텍스트 파일에 기록
-                    text_file.write(f"Frame {frame_count}: In {in_count}, Out {out_count}\n")
-                    detect_text_file.write(f"Frame {frame_count}: BBOX : {boxes} , TRACK : {track_ids}\n")
-
-                except queue.Empty:
-                    
-                    end_time = datetime.datetime.now()
-                    video_writer.release()
-                    text_file.close()  # 텍스트 파일 닫기
-                    
-                    if frame_count == 0:
-                        os.remove(video_save_full_path)
-                        os.remove(counter_save_full_path)  # 비디오 파일이 없으면 텍스트 파일도 삭제
-                        print("No DATA")
-                        
-                    else:
-                        
-                        ## 비디오 파일 저장
-                        final_video_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.avi"
-                        final_save_path = os.path.join(SAVE_VIDEO_PATH, final_video_name)
-                        os.rename(video_save_full_path, final_save_path)
-                        
-                        if os.path.exists(video_save_full_path) :
-                            os.remove(video_save_full_path) ## 저장 했으면, 완전 삭제
-                        else :
-                            pass
-                        
-                        print(f"Video saved: {final_save_path}")
-                        
-                        ## 텍스트 파일 저장
-                        final_counter_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
-                        final_counter_txt_save_path = os.path.join(SAVE_COUNTER_TXT_PATH, final_counter_txt_name)
-                        os.rename(counter_save_full_path, final_counter_txt_save_path)
-                        
-                        if os.path.exists(counter_save_full_path) :
-                            os.remove(counter_save_full_path) ## 저장 했으면, 완전 삭제
-                        else :
-                            pass
-                        
-                        print(f"Counts saved: {final_counter_txt_save_path}")
-                        
-                        ## 디텍팅 파일 저장
-                        final_detect_txt_name = f"{FARM}_{HOUSE}_{COUNTER}_{start_time.strftime('%Y%m%d_%H%M%S')}_{end_time.strftime('%Y%m%d_%H%M%S')}.txt"
-                        final_detect_txt_save_path = os.path.join(SAVE_DETECT_TXT_PATH, final_detect_txt_name)
-                        os.rename(detect_save_full_path, final_detect_txt_save_path)
-                        
-                        if os.path.exists(detect_save_full_path) :
-                            os.remove(detect_save_full_path) ## 저장 했으면, 완전 삭제
-                        else :
-                            pass
-                        
-                        print(f"Counts saved: {final_detect_txt_save_path}")
-                        
-                    break
-
-        except Exception as e:
-            print(e)
-            pass
       
 if __name__ == '__main__':
     
