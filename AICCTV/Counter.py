@@ -21,7 +21,8 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     # 모델 불러오기
     model = YOLO(MODEL_PATH)
     
-    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) 
+    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER)
+    print(rtsp)
     
     # 셋팅값 불러오기
     #_, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) # 테스트 시 적용

@@ -83,8 +83,8 @@ def init_saver(SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PATH, FAR
     # 비디오 라이터 초기화
     video_writer = cv2.VideoWriter(video_save_full_path,
                                 cv2.VideoWriter_fourcc(*'mp4v'),
-                                #10, # normal mode
-                                30, #test mode
+                                10, # normal mode
+                                #30, #test mode
                                 (640, 480))
     
     return start_time, end_time, frame_count, text_file, detect_text_file, video_writer, counter_save_full_path, detect_save_full_path, video_save_full_path

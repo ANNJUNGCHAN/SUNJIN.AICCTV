@@ -35,12 +35,14 @@ pip install docker==6.1.3
 
 ```
 docker-compose -f /home/sunjin/AICCTV/docker-compose.yml up -d
+docker-compose -f /home/sunjin/AICCTV/docker-compose-only.yml up -d
 ```
 
 - 도커 컴포즈 삭제
 
 ```
 docker-compose -f /home/sunjin/AICCTV/docker-compose.yml down --rmi all --volumes # 이미지와 볼륨 모두 삭제
+docker-compose -f /home/sunjin/AICCTV/docker-compose-only.yml down --rmi all --volumes
 ```
 
 - 도커에서 사용하지 않는 모든 리소스 삭제 <br>
