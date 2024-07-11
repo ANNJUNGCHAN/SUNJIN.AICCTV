@@ -1,0 +1,7 @@
+{
+	"DB": "AICCTV_MySQL_DB",
+	"host": "193.202.10.89",
+    "port": 10000,
+	"user": "root",
+    "password" : "sunjin1234"
+}

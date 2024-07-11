@@ -1,0 +1,35 @@
+version: "3"
+
+services:
+
+  AICCTV_WEB: 
+
+    # 첫번째 컨테이너에서만 이미지를 빌드한다
+    #############################
+    build:
+      context: ./streamlit
+      dockerfile: Dockerfile
+    image: "streamlit:python3.9"
+    #############################
+
+    container_name: AICCTV_WEB
+    volumes:
+      - /mnt:/Drive
+      - ./app:/app
+    environment:
+      - TZ=Asia/Seoul
+    restart: always
+    ports:
+      - "8501:8501"  # EXPOSE 8501
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    entrypoint: ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
