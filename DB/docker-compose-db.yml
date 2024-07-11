@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+
+  AICCTV_Raw_To_DB: 
+
+    # 첫번째 컨테이너에서만 이미지를 빌드한다
+    #############################
+    build:
+      context: ./Update
+      dockerfile: Dockerfile
+    image: "python3.10:db"
+    #############################
+
+    container_name: AICCTV_Raw_To_DB
+    volumes:
+      - /media/sunjin:/Drive
+      - /home/sunjin/AICCTV/DB/Update:/Update
+    environment:
+      - TZ=Asia/Seoul
+    restart: always
+    command: ["/bin/python3", "/Update/updater.py"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+  AICCTV_MySQL: 
+
+    image: mysql:5.7
+    
+    container_name: AICCTV_MySQL_DB
+    environment:
+      - MYSQL_ROOT_PASSWORD=sunjin1234
+      - MYSQL_DATABASE=AICCTV_MySQL_DB
+      - MYSQL_USER=sunjin
+      - MYSQL_PASSWORD=sunjin1234
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    ports:
+      - "10000:3306" # 나가는포트:도커 내 포트

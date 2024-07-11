@@ -166,3 +166,4 @@ pnnx*
 /ultralytics/assets/
 /AICCTV/setting
 Train/AICCTV_DATASET_20240611/
+DB/Update/config.json
