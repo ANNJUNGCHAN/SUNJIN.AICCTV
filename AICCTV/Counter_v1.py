@@ -18,15 +18,17 @@ from utils import *
 
 def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     
+    print(MODEL_PATH)
     # 모델 불러오기
     model = YOLO(MODEL_PATH)
     
-    # rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) 
+    rtsp, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER)
+    print(rtsp)
     
     # 셋팅값 불러오기
-    _, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) # 테스트 시 적용
+    #_, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) # 테스트 시 적용
     
-    rtsp = "/Drive/DATACENTER_HDD/AICCTV_BACKUP_PRE/BUGUN_Dong_1_DEAD_5min.mp4" # 테스트 데이터 넣기
+    #rtsp = "/Drive/DATACENTER_HDD/AICCTV_BACKUP_PRE/BUGUN_Dong_1_DEAD_5min.mp4" # 테스트 데이터 넣기
     
     counter = MakeCounter(model, region_points)
     
@@ -46,7 +48,7 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
             while cap.isOpened():
                 
                 success, im0 = cap.read()
-                time.sleep(1/30) # 테스트 시만 적용
+                #time.sleep(1/30) # 테스트 시만 적용
                 
                 if not success:
                     print("Video frame is empty or video processing has been successfully completed.")
@@ -180,7 +182,8 @@ if __name__ == '__main__':
     
     ### 해당 2개 값은 설정하는 것이 아닌, 기본값이 파싱되도록 한다.
     ### 만약에 모델에 변경이 생기면, 해당 부분의 경로만 수정해서 전체 적용 되도록 한다.
-    parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt', help='insert yolov8 detection model')
+    parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240612_trial_1/weights/best.pt', help='insert yolov8 detection model')
+    # /mnt/
     parser.add_argument('--setting', type=str, default='/code/setting', help='insert setting json path')
     ################################################################################
     

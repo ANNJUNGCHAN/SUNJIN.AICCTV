@@ -36,6 +36,7 @@ pip install docker==6.1.3
 ```
 docker-compose -f /home/sunjin/AICCTV/docker-compose.yml up -d
 docker-compose -f /home/sunjin/AICCTV/docker-compose-only.yml up -d
+docker-compose -f /home/sunjin/AICCTV/docker-compose-testver.yml up -d
 ```
 
 - 도커 컴포즈 삭제

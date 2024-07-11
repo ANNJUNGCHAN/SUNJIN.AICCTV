@@ -18,6 +18,7 @@ from utils import *
 
 def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     
+    print(MODEL_PATH)
     # 모델 불러오기
     model = YOLO(MODEL_PATH)
     
@@ -25,11 +26,11 @@ def Detect(q, MODEL_PATH, SETTING_PATH, FARM, HOUSE, COUNTER) :
     print(rtsp)
     
     # 셋팅값 불러오기
-    #_, region_points = SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) # 테스트 시 적용
+    #_, region_points = SearchParamTestVer(SETTING_PATH, FARM, HOUSE, COUNTER) # 테스트 시 적용
     
-    #rtsp = "/Drive/DATACENTER_HDD/AICCTV_BACKUP_PRE/BUGUN_Dong_1_DEAD_5min.mp4" # 테스트 데이터 넣기
+    #rtsp = "/Drive/DATACENTER_HDD/AICCTV_RAW_VIDEO/BUGUN_Dong_3_FRONT_DEAD_20240510_073900_20240510_074828.avi" # 테스트 데이터 넣기
     
-    counter = MakeCounter(model, region_points)
+    counter = MakeInOutCounter(model, region_points)
     
     while True :
     
@@ -108,7 +109,7 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
                 start_time = datetime.datetime.now()  # 첫 데이터 수신 시간 기록
 
             boxes, track_ids, im0, in_count, out_count = data
-            print(boxes, track_ids, in_count, out_count)
+            #print(boxes, track_ids, in_count, out_count)
 
             #print('기록시작')
             #print(video_writer.isOpened())
@@ -123,8 +124,10 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
 
             # in_count와 out_count를 텍스트 파일에 기록
             text_file.write(f"Frame {frame_count}: In {in_count}, Out {out_count}\n")
+            print(f"Frame {frame_count}: In {in_count}, Out {out_count}")
             detect_text_file.write(f"Frame {frame_count}: BBOX : {boxes} , TRACK : {track_ids}\n")
-
+            print(f"Frame {frame_count}: BBOX : {boxes} , TRACK : {track_ids}")
+            
         except queue.Empty:
             
             if frame_count > 0 :
@@ -177,17 +180,19 @@ def VideoRecorder(q, SAVE_VIDEO_PATH, SAVE_COUNTER_TXT_PATH, SAVE_DETECT_TXT_PAT
       
 if __name__ == '__main__':
     
+    # /opt/conda/bin/python /code/CounterUpdate.py --setting /code/setting --farm=BUGUN --house=Dong_3_FRONT --counter=Polygon --video_path=/Drive/DATACENTER_HDD/AICCTV_TEST_VIDEO --counter_txt_path=/Drive/DATACENTER_HDD/AICCTV_TEST_LOG --detect_txt_path=/Drive/DATACENTER_HDD/AICCTV_Test_Detect_Log
+    
     parser = argparse.ArgumentParser()
     
     ### 해당 2개 값은 설정하는 것이 아닌, 기본값이 파싱되도록 한다.
     ### 만약에 모델에 변경이 생기면, 해당 부분의 경로만 수정해서 전체 적용 되도록 한다.
-    parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240319/weights/best.pt', help='insert yolov8 detection model')
+    parser.add_argument('--model', type=str, default='/Drive/DATACENTER_SSD/AICCTV_ASSET/model/20240711_trial_12/weights/best.pt', help='insert yolov8 detection model')
     parser.add_argument('--setting', type=str, default='/code/setting', help='insert setting json path')
     ################################################################################
     
     parser.add_argument('--farm', type=str, default='', help='insert farm name')
     parser.add_argument('--house', type=str, default='', help='insert house name')
-    parser.add_argument('--counter', type=str, default='', help='insert count type (upper letter, DEAD/OUT)')
+    parser.add_argument('--counter', type=str, default='', help='insert count type (upper letter, DEAD/OUT/Polygon)')
     parser.add_argument('--video_path', type=str, default='', help='insert where you save video')
     parser.add_argument('--counter_txt_path', type=str, default='', help='insert where you save counter txt path')
     parser.add_argument('--detect_txt_path', type=str, default='', help='insert where you save counter txt path')

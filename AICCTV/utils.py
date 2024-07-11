@@ -3,6 +3,7 @@ import datetime
 import os
 import json
 from ultralytics.solutions import object_counter
+from ultralytics.solutions import region_select_inout_counter
 
 def InsertNowTime(frame) :
     time_stamp = datetime.datetime.now()
@@ -31,7 +32,32 @@ def SearchParam(SETTING_PATH, FARM, HOUSE, COUNTER) :
     rect = json_data['MULTI_CAM'][cam_no][COUNTER]
     region_points = []
     for sublist in rect:
-        region_points.append((int(sublist[0]), int(sublist[1])))
+        region_points.append((int(float(sublist[0]) * 640), int(float(sublist[1]) * 480)))
+        
+    return rtsp, region_points
+
+def SearchParamTestVer(SETTING_PATH, FARM, HOUSE, COUNTER) :
+    
+    # JSON 불러오기
+    with open(os.path.join(SETTING_PATH, FARM + "_update" + '.json'), 'r') as f :
+        json_data = json.load(f)
+        
+    # 필요한 것들 얻기
+
+    ## 카메라 번호 찾기
+    cam_name_dict = json_data['CAM_NAME']
+    reverse_cam_name_dict = {v:k for k,v in cam_name_dict.items()}
+    cam_no = reverse_cam_name_dict[HOUSE]
+
+    ## rtsp 찾기
+    rtsp_dict = json_data['RTSP_URL']
+    rtsp = rtsp_dict[cam_no]
+
+    ## 구역 찾기
+    rect = json_data['MULTI_CAM'][cam_no][COUNTER]
+    region_points = []
+    for sublist in rect:
+        region_points.append((int(float(sublist[0]) * 640), int(float(sublist[1]) * 480)))
         
     return rtsp, region_points
 
@@ -39,6 +65,21 @@ def MakeCounter(model, region_points) :
     
     ## 카운터 정의
     counter = object_counter.ObjectCounter()
+    
+    ## 카운터 설정
+    counter.set_args(view_img=False,
+                    reg_pts=region_points,
+                    classes_names=model.names,
+                    draw_tracks=True,
+                    view_in_counts = True,
+                    view_out_counts = True)
+    
+    return counter
+
+def MakeInOutCounter(model, region_points) :
+    
+    ## 카운터 정의
+    counter = region_select_inout_counter.ObjectCounter()
     
     ## 카운터 설정
     counter.set_args(view_img=False,
